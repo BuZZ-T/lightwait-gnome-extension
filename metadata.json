@@ -1,1 +1,10 @@
-{"name": "Lightwait", "description": "A simple lightwait-presenter for gnome3", "uuid": "lightwait@buzz-t.eu", "shell-version": ["3.28.4"]}
+{
+    "name": "Lightwait",
+    "description": "A simple lightwait-presenter for gnome3 (see https://github.com/BuZZ-T/lightwait",
+    "uuid": "lightwait@buzz-t.eu",
+    "url": "https://github.com/BuZZ-T/lightwait-gnome-extension",
+    "version": 1,
+    "shell-version": [
+        "3.28.4"
+    ]
+}

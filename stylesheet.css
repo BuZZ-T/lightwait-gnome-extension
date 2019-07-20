@@ -2,8 +2,12 @@
 .helloworld-label {
     font-size: 36px;
     font-weight: bold;
-    color: #ffffff;
+    color: #ff0000;
     background-color: rgba(10,10,10,0.7);
     border-radius: 5px;
     padding: .5em;
+}
+
+.lightwait-status-icon {
+    background-color: #00ffff;
 }
