@@ -41,26 +41,114 @@ function _showHello() {
         });
 }
 
+function validateColors(colors) {
+    return colors.every(color => color.every(c => !isNaN(c) && c >= 0 && c <=255))
+}
 
+function parseColors(message) {
+    const isBlink = message.toString().startsWith('b');
+
+    const colors = message.match(/\d+:\d+:\d+/g)
+    if (!colors) {
+        log('not found');
+        return
+    }
+
+    const intColors = colors.map(color => {
+        const matcher = color.match(/(\d+):(\d+):(\d+)/);
+        return matcher
+            ? matcher.slice(1).map(c => parseInt(c, 10))
+            : null;
+    }).filter(color => !!color);
+
+    const allValid = validateColors(intColors);
+
+    return allValid
+        ? [isBlink, intColors]
+        : [isBlink, null]
+}
 
 function onNewConnection(socketService, connection, source) {
-    log('new connection!')
-
     const buf = connection.get_input_stream().read_bytes(1024, null);
-    log(buf.get_data());
+    const input = buf.get_data();
+    const [blink, colors] = parseColors(input.toString());
+    if (!colors) {
+        log('[lightwait] not all valid!');
+        return
+    }
+
+    log(`blink: ${blink}, colors: ${colors}`);
 }
 
 function createTcpConnection() {
     const socketService = new Gio.SocketService();
 
-    const inetAddress = Gio.InetSocketAddress.new_from_string('127.0.0.1', 3050)
     socketService.add_inet_port(3050, null);
     socketService.connect('incoming', onNewConnection);
 
-    const mainloop = GLib.MainLoop.new(null, true);
-    const context = mainloop.get_context();
-    log(`Service created!`)
-    mainloop.run();
+    run();
+}
+
+function createUdpSocket() {
+    const socket = new Gio.Socket({
+        family: Gio.SocketFamily.IPV4,
+        type: Gio.SocketType.DATAGRAM,
+        protocol: Gio.SocketProtocol.UDP,
+    })
+
+    const address = new Gio.InetSocketAddress({
+        address: Gio.InetAddress.new_from_string('127.0.0.1'),
+        port: 3050,
+    })
+
+    socket.init(null);
+    socket.bind(address, null);
+
+    let buf = new ByteArray.ByteArray(256);
+
+    // blocking
+    let size = socket.receive(buf, null);
+
+    buf[size] = 0;
+
+    log(buf.toString());
+}
+
+function createUdpDescriptor() {
+    const socket = new Gio.Socket({
+        family: Gio.SocketFamily.IPV4,
+        type: Gio.SocketType.DATAGRAM,
+        protocol: Gio.SocketProtocol.UDP,
+    })
+
+    const address = new Gio.InetSocketAddress({
+        address: Gio.InetAddress.new_from_string('127.0.0.1'),
+        port: 3050,
+    })
+
+    socket.init(null);
+    socket.bind(address, null);
+
+    const fd = socket.get_fd();
+    const channel = GLib.IOChannel.unix_new(fd);
+    const source = GLib.io_add_watch(channel, 0, GLib.IOCondition.IN, function(gSource, condition) {
+        let buf = new ByteArray.ByteArray(256);// Array(256);
+        for(let i = 0; i < 256; i++) {
+            buf[i] = 1;
+        }
+
+        log(`before: ${buf[0]}, ${buf[1]}, ${buf[2]}`);
+
+        const bufSize = socket.receive(buf, null);
+
+        buf.length = bufSize;
+
+        log(`after: ${buf[0]}, ${buf[1]}, ${buf[2]}`);
+
+        log(`buf: ${buf}/${buf.toString()}, size: ${bufSize}`);
+    });
+
+    run();
 }
 
 function init() {
@@ -83,6 +171,12 @@ function init() {
     button.connect('button-press-event', _showHello);
 }
 
+function run() {
+    const mainloop = GLib.MainLoop.new(null, true);
+    log(`Started!`)
+    mainloop.run();
+}
+
 function enable() {
     Main.panel._rightBox.insert_child_at_index(button, 0);
 }
@@ -92,3 +186,5 @@ function disable() {
 }
 
 createTcpConnection();
+// createUdpSocket();
+// createUdpDescriptor();
