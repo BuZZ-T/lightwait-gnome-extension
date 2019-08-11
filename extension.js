@@ -66,7 +66,7 @@ function createTcpConnection() {
     socketService = new Gio.SocketService();
 
     try {
-        socketService.add_inet_port(3050, null);
+        socketService.add_inet_port(3030, null);
         socketService.connect('incoming', function (socketService, connection, source) {
             const buf = connection.get_input_stream().read_bytes(1024, null);
             const input = buf.get_data();
@@ -97,7 +97,7 @@ function createUdpSocket() {
 
     const address = new Gio.InetSocketAddress({
         address: Gio.InetAddress.new_from_string('127.0.0.1'),
-        port: 3050,
+        port: 3030,
     })
 
     socket.init(null);
@@ -126,7 +126,7 @@ function createUdpDescriptor() {
 
     const address = new Gio.InetSocketAddress({
         address: Gio.InetAddress.new_from_string('127.0.0.1'),
-        port: 3050,
+        port: 3030,
     })
 
     socket.init(null);
